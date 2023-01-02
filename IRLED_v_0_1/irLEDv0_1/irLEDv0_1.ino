@@ -7,7 +7,7 @@ byte photoDiode[6] = {A0, A1, A2, A3, A6, A9}; //from bottom up
 const byte LED_0 = 6;
 const byte LED_1 = 7;
 const byte LED_2 = 8;
-//
+//s
 //const byte delayButton =  14;
 //const byte keyboardStop = 16;
 
@@ -15,9 +15,9 @@ const byte LED_2 = 8;
    need to find way to fluctuation range to be pressed properly
    or may result in random keyboard tapping
 */
-int fluctuationValue=50;
+int fluctuationValue=50; //this need to experiment with, for now, this is just a rough numbner
 int calibrateValue[6];
-int airKeys[6] = { 'a', 'b', 'c', 'd', 'e', 'f'};
+int airKeys[6] = { '.', '/', ';', '\'', '[', ']'};
 
 void setup() {
 //  while (digitalRead(delayButton) == LOW) { //to finish calibrate and know that calibrate value before continue
@@ -56,15 +56,14 @@ void loop() {
   */
   for (int i = 0; i < 6; i++) {
     controlLED(i); //turn on corresponding IRLED
-    delay(5); //to preven read before turn on (as describe in other Openithm)
+    delay(3); //to preven read before turn on (as describe in other Openithm)
     int diodeValue = analogRead(photoDiode[i]);
     //    Serial.println("IR number");
     //    Serial.print(i);
     //    Serial.print(" is ");
     Serial.print(diodeValue);
     Serial.print("   ");
-    delay (5);
-        if (diodeValue < (calibrateValue[i] - fluctuationValue)) {
+    if (diodeValue < (calibrateValue[i] - fluctuationValue)) {
           Keyboard.press(airKeys[i]);
         }
         else {
