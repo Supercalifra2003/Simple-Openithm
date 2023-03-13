@@ -2,7 +2,7 @@
 #include "AirSensor.h"
 #include "PinConfig.h"
 
-int _fluctuationValue = 30;
+int _fluctuationValue = 50;
 int _calibrateValue[6];
 byte photoDiode[6] = {diode_0, diode_1, diode_2, diode_3, diode_4, diode_5};
 bool airStates[6];
@@ -23,7 +23,13 @@ void AirSensor::calibrateLED(){
   for(int i=0; i<6; i++){
     controlLED(i);
     delay(200);
-    _calibrateValue[i]=analogRead(photoDiode[i]);
+    _calibrateValue[i] = analogRead(photoDiode[i]);
+  }
+}
+
+void AirSensor::setupLED(){
+  for (int i=0; i < 6; i++){
+    pinMode(photoDiode[i], INPUT);
   }
 }
 

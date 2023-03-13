@@ -1,59 +1,55 @@
+#include <Wire.h>
 //#include <Keyboard.h>
-
-//photodiode input pins
-byte photoDiode[6] = {A0, A1, A2, A3, A6, A7}; //from bottom up
-
-//charliplexed IR transmiter output pins
+int16_t data1 = 0; //output data of mpr121(0x5a)
+int16_t data2 = 0; //output data of mpr121(0x5b)
+//char keys[16] = {
+//  'a', 'z', 's', 'x', 'd', 'c', 'f', 'v',
+//  'g', 'b', 'h', 'n', 'j', 'm', 'k', ','
+//};
+byte photoDiode[6] = {A0, A1, A2, A3, A6, A7};
 const byte LED_0 = 7;
 const byte LED_1 = 8;
 const byte LED_2 = 9;
-//s
-//const byte delayButton =  14;
-//const byte keyboardStop = 16;
 
-/*todo: the value of IR fluctuate alot,
-   need to find way to fluctuation range to be pressed properly
-   or may result in random keyboard tapping
-*/
-int fluctuationValue=50; //this need to experiment with, for now, this is just a rough numbner
+int fluctuationValue = 50;
 int calibrateValue[6];
-char airKeys[6] = { '.', '/', ';', '\'', '[', ']'};
+//char airKeys[6] = { '.', '/', ';', '\'', '[', ']'};
 
 void setup() {
-//  while (digitalRead(delayButton) == LOW) { //to finish calibrate and know that calibrate value before continue
-    for (int i = 0; i < 6; i++) {
+  Wire.begin(); //initialize Wire.h lib
+  Serial.begin(115200); //initialize serial with 9600 baud rate
+  for (int i = 0; i < 6; i++){
       pinMode(photoDiode[i], INPUT);
       calibrateValue[i] = calibrateLED(i);
-      Serial.println("calibrate value");
-      Serial.print(i);
-      Serial.print(calibrateValue[i]);
     }
-//  }
-  Serial.begin(115200);
-//  Keyboard.begin();
-  Serial.println("1    2     3    4    5   6");
-
+  setupI2C(0x5A);
+  setupI2C(0x5B);
+  delay(3000); //wait for complete setup
+  Serial.println("SETUP COMPLETE"); 
 }
 
 void loop() {
-  //turn on each led, then press key according to the turn on LED
-  /* example:
-      loop through each LED {
-      charliplexed LED_0 ON, LED_(2, 3, 4, 5, 6) off
-      irValue = analogRead(A0)
-      state = (irValue < calibrateValue) ? Pressed : notPressed
-      return state
-      }
+  //mpr121 0x5A
+  data1 = getKeysData(0x5A);
+  Serial.println(data1, BIN);
+  //print data1 as binary
 
-      pressKey[1]
-      wait until the next cycle loop
-      if (state = notPressed)
-      releaseKey[1] (only release when receive new state, not when scanning through next LED)
-  */
+  //mpr121 0x5B
+  data2 = getKeysData(0x5B);
+  Serial.println(data2, BIN);
+  //print data2 as binary
 
-  /* calibrateValue {
-      loop through all LED and read all
-  */
+  /*data1 and data 2 to keyboard
+  use for loop to loop through the digits of binary
+  press(keys[i]) for 1, release ONLY when 0
+  Or use bitRead
+  to do: ADD RAW HID*/
+  
+//  for(int i=0; i<8; i++)
+//  {
+//    (bitRead(data1, i) == 1) ? Keyboard.press(keys[i]) : Keyboard.release(keys[i]);
+//    (bitRead(data2, i) == 1) ? Keyboard.press(keys[i+8]) : Keyboard.release(keys[i+8]);
+//  }
   for (int i = 0; i < 6; i++) {
     controlLED(i); //turn on corresponding IRLED
     delay(2); //to preven read before turn on (as describe in other Openithm)
@@ -77,25 +73,48 @@ void loop() {
     //this need to change to other way of writing in order to do Keyboard.release
   }
   Serial.println();
+  
+  
+  delay(5);
 }
 
-
-//use pointer to return whole array
-/*int *calibrateLED (int LED) {
-  //array of calubrate value for each photodiode
-  //static to keep array pointer
-  static int calibrateValue[6];
-
-  //loop through each sensor and put in calibrate value
-  for (int i = 0; i < 6; i++) {
-    controlLED(i);
-    delay(200); //delay so that value is stable to calibration
-    calibrateValue[i] = analogRead(photoDiode[i]);
-    Serial.println("calibrate value ");
-    Serial.print(i);
-    Serial.print(calibrateValue[i]);
+/*int returnKey(){
+    int i = 0;
+  do {    
+    (bitRead(data1, i) == 1) ? Keyboard.press(keys[i]) : Keyboard.release(keys[i]);
+    (bitRead(data2, i) == 1) ? Keyboard.press(keys[i+8]) : Keyboard.release(keys[i+8]);
   }
-  }*/
+  while (i < 8);
+  return i;
+}
+*/
+
+void setupI2C (int address){
+  Wire.beginTransmission(address); //start sending data bits to address 0x5b and 0x5a
+  Wire.write(0x80); //send/write 0x80 and 0x63 as the settings for mpr121
+  Wire.write(0x63);
+  Wire.endTransmission(); //end sending data bits
+
+  Wire.beginTransmission(address);
+  Wire.write(0x5E);
+  Wire.write(0x0C);
+  Wire.endTransmission();
+}
+
+int getKeysData (int address){
+  //mpr1fff21 address (0x5a or 0x5b)
+  Wire.beginTransmission(address);
+  Wire.write(0x00); //might change to read only 8 pins due to 8+8 layout
+  Wire.endTransmission();
+  Wire.requestFrom(address, 2, true);
+  /*request data from 0x5a, 2 consecutive bytes, and stop message,
+  release the bus for the master device have multiple transmission*/  
+  
+  return (Wire.read() | Wire.read() << 8) & 0b0000111111111111;
+  /*Wire.read(): read the next byte transmitted; two times
+  second byte shift to the left 8 times
+  use bitwise AND to mask the unwanted bits*/
+}
 
 int calibrateLED (int LED) {
   controlLED(LED);

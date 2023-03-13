@@ -14,6 +14,8 @@ void setup() {
   
   setupI2C(0x5A);
   setupI2C(0x5B);
+  delay(3000); //wait for complete setup
+  Serial.println("SETUP COMPLETE"); 
 }
 
 void loop() {
@@ -33,11 +35,11 @@ void loop() {
   Or use bitRead
   to do: ADD RAW HID*/
   
-  for(int i=0; i<8; i++)
-  {
-    (bitRead(data1, i) == 1) ? Keyboard.press(keys[i]) : Keyboard.release(keys[i]);
-    (bitRead(data2, i) == 1) ? Keyboard.press(keys[i+8]) : Keyboard.release(keys[i+8]);
-  }
+//  for(int i=0; i<8; i++)
+//  {
+//    (bitRead(data1, i) == 1) ? Keyboard.press(keys[i]) : Keyboard.release(keys[i]);
+//    (bitRead(data2, i) == 1) ? Keyboard.press(keys[i+8]) : Keyboard.release(keys[i+8]);
+//  }
 
   delay(5);
 }

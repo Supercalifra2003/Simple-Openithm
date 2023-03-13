@@ -10,6 +10,7 @@ class AirSensor
         bool getAirStates(int sensor);
         bool airStates[6];
         void calibrateLED();
+        void setupLED();
     private:
         byte photoDiode[6];
         int _fluctuationValue;
