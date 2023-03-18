@@ -1,6 +1,39 @@
 #include <Wire.h>
 #include <Keyboard.h>
 
+enum MPR121Register {
+  MPR121_TOUCHSTATUS_L = 0x00,
+  MPR121_TOUCHSTATUS_H = 0x01,
+  MPR121_FILTDATA_0L = 0x04,
+  MPR121_FILTDATA_0H = 0x05,
+  MPR121_BASELINE_0 = 0x1E,
+  MPR121_MHDR = 0x2B,
+  MPR121_NHDR = 0x2C,
+  MPR121_NCLR = 0x2D,
+  MPR121_FDLR = 0x2E,
+  MPR121_MHDF = 0x2F,
+  MPR121_NHDF = 0x30,
+  MPR121_NCLF = 0x31,
+  MPR121_FDLF = 0x32,
+  MPR121_NHDT = 0x33,
+  MPR121_NCLT = 0x34,
+  MPR121_FDLT = 0x35,
+
+  MPR121_TOUCHTH_0 = 0x41,
+  MPR121_RELEASETH_0 = 0x42,
+  MPR121_DEBOUNCE = 0x5B,
+  MPR121_CONFIG1 = 0x5C,
+  MPR121_CONFIG2 = 0x5D,
+  MPR121_CHARGECURR_0 = 0x5F,
+  MPR121_CHARGETIME_1 = 0x6C,
+  MPR121_ECR = 0x5E,
+  MPR121_AUTOCONFIG0 = 0x7B,
+  MPR121_AUTOCONFIG1 = 0x7C,
+  MPR121_UPLIMIT = 0x7D,
+  MPR121_LOWLIMIT = 0x7E,
+  MPR121_TARGETLIMIT = 0x7F,
+};
+
 int electrodesNumber = 0x08; // 8 electrodes
 //0x0C for default 12 electrodesNumber 
 //change this for 8 electodes per MPR121
@@ -90,99 +123,63 @@ void loop() {
 
 
 void setupI2C (int address, int electrodesSetting){
-  Wire.beginTransmission(address); //start sending data bits to address 0x5b and 0x5a
-  Wire.write(0x80); //send/write 0x80 and 0x63 as the settings for mpr121
-  Wire.write(0x63); //0x80 and 0x63 is soft reset 
-  Wire.endTransmission(); //end sending data bits
+//  Wire.beginTransmission(address); //start sending data bits to address 0x5b and 0x5a
+//  Wire.write(0x80); //send/write 0x80 and 0x63 as the settings for mpr121
+//  Wire.write(0x63); //0x80 and 0x63 is soft reset 
+//  Wire.endTransmission(); //end sending data bits
+  I2CWrite(address, 0x80, 0x63);
 
-  mpr121AutoConfig(address);
-  
-  Wire.beginTransmission(address);
-  Wire.write(0x5E); // ECR mode, refer to section 11 
-  Wire.write(electrodesSetting); // setting 1100
-  Wire.endTransmission();
+//  mpr121AutoConfig(address); //for auto config
+  settingsI2C(address); //for calibrate profile 
+
+//  Wire.beginTransmission(address);
+//  Wire.write(0x5E); // ECR mode, refer to section 11 
+//  Wire.write(electrodesSetting); // setting 1100
+//  Wire.endTransmission();
+  I2CWrite(address, MPR121_ECR, electrodesSetting);
 }
 
 void mpr121AutoConfig(int address){
   //set auto config, works for now but might need to fine tune for better uses
-  Wire.beginTransmission(address);
-  Wire.write(0x7B);
-  Wire.write(0x0B);
-  Wire.endTransmission();
- 
+  I2CWrite(address, MPR121_AUTOCONFIG0, 0x0B); 
   //correct value for Vdd=3.3 according to Adafruit mpr121 library
   //set upper limit
-  Wire.beginTransmission(address);
-  I2CWrite(0x7D, 200); //202
-  Wire.endTransmission();
+  I2CWrite(address, MPR121_UPLIMIT, 200); //202
   
   //set tartget limit
-  Wire.beginTransmission(address);
-  I2CWrite(0x7F, 180); //182
-  Wire.endTransmission();
+  I2CWrite(address, MPR121_TARGETLIMIT, 180); //182
   
   //set low limit
-  Wire.beginTransmission(address);
-  I2CWrite(0x7E, 130); //131
-  Wire.endTransmission();
+  I2CWrite(address, MPR121_LOWLIMIT, 130); //131
   }
 
 void settingsI2C(int address){
   //sucreto setting is describe the the comments, might need to change to it
-  I2CWrite(MPR121_MHDR, 0x01); 
-  I2CWrite(MPR121_NHDR, 0x01);  
-  I2CWrite(MPR121_NCLR, 0x0E); //0x10
-  I2CWrite(MPR121_FDLR, 0x00);
+  I2CWrite(address, MPR121_MHDR, 0x01); 
+  I2CWrite(address, MPR121_NHDR, 0x01);  
+  I2CWrite(address, MPR121_NCLR, 0x0E); //0x10
+  I2CWrite(address, MPR121_FDLR, 0x00);
      
-  I2CWrite(MPR121_MHDF, 0x01);
-  I2CWrite(MPR121_NHDF, 0x05); //0x01
-  I2CWrite(MPR121_NCLF, 0x01); //0x08
-  I2CWrite(MPR121_FDLF, 0x00); //0x08
+  I2CWrite(address, MPR121_MHDF, 0x01);
+  I2CWrite(address, MPR121_NHDF, 0x05); //0x01
+  I2CWrite(address, MPR121_NCLF, 0x01); //0x08
+  I2CWrite(address, MPR121_FDLF, 0x00); //0x08
 
-  I2CWrite(MPR121_NHDT, 0x00);
-  I2CWrite(MPR121_NCLT, 0x00);
-  I2CWrite(MPR121_FDLT, 0x00);
+  I2CWrite(address, MPR121_NHDT, 0x00);
+  I2CWrite(address, MPR121_NCLT, 0x00);
+  I2CWrite(address, MPR121_FDLT, 0x00);
 
-  I2CWrite(MPR121_DEBOUNCE, 0);
-  I2CWrite(MPR121_CONFIG1, 0x10);
-  I2CWrite(MPR121_CONFIG2, 0x20); //0x20 ~32
+  I2CWrite(address, MPR121_DEBOUNCE, 0);
+  I2CWrite(address, MPR121_CONFIG1, 0x10);
+  I2CWrite(address, MPR121_CONFIG2, 0x20); //0x20 ~32
 
 }
 
-  MPR121_TOUCHSTATUS_L = 0x00,
-  MPR121_TOUCHSTATUS_H = 0x01,
-  MPR121_FILTDATA_0L = 0x04,
-  MPR121_FILTDATA_0H = 0x05,
-  MPR121_BASELINE_0 = 0x1E,
-  MPR121_MHDR = 0x2B,
-  MPR121_NHDR = 0x2C,
-  MPR121_NCLR = 0x2D,
-  MPR121_FDLR = 0x2E,
-  MPR121_MHDF = 0x2F,
-  MPR121_NHDF = 0x30,
-  MPR121_NCLF = 0x31,
-  MPR121_FDLF = 0x32,
-  MPR121_NHDT = 0x33,
-  MPR121_NCLT = 0x34,
-  MPR121_FDLT = 0x35,
-
-  MPR121_TOUCHTH_0 = 0x41,
-  MPR121_RELEASETH_0 = 0x42,
-  MPR121_DEBOUNCE = 0x5B,
-  MPR121_CONFIG1 = 0x5C,
-  MPR121_CONFIG2 = 0x5D,
-  MPR121_CHARGECURR_0 = 0x5F,
-  MPR121_CHARGETIME_1 = 0x6C,
-  MPR121_ECR = 0x5E,
-  MPR121_AUTOCONFIG0 = 0x7B,
-  MPR121_AUTOCONFIG1 = 0x7C,
-  MPR121_UPLIMIT = 0x7D,
-  MPR121_LOWLIMIT = 0x7E,
-  MPR121_TARGETLIMIT = 0x7F,
-
-void I2CWrite(int command, int data){
+void I2CWrite(int address, int command, int data){
+  Wire.beginTransmission(address);
   Wire.write(command);
-  wire.write(data);
+  Wire.write(data);
+  Wire.endTransmission();
   }
 
 int getKeysData (int address){
