@@ -2,6 +2,7 @@
 #include <Keyboard.h>
 
 enum MPR121Register {
+  MPR121_SOFTRESET = 0x80,
   MPR121_TOUCHSTATUS_L = 0x00,
   MPR121_TOUCHSTATUS_H = 0x01,
   MPR121_FILTDATA_0L = 0x04,
@@ -65,8 +66,10 @@ void setup() {
       pinMode(photoDiode[i], INPUT);
       calibrateValue[i] = calibrateLED(i);
     }
-  setupI2C(0x5A, electrodesNumber);
-  setupI2C(0x5B, electrodesNumber);
+//  setupI2C(0x5A, electrodesNumber);
+//  setupI2C(0x5B, electrodesNumber);
+  MPR121_begin(0x5A, electrodesNumber);
+  MPR121_begin(0x5B, electrodesNumber);
   delay(3000); //wait for complete setup
   Serial.println("SETUP COMPLETE"); 
 }
@@ -115,14 +118,12 @@ void loop() {
 //          Serial.print(" release  |");
         }
   }
-//  Serial.println();
-  
-  
- // delay(5);
+//  Serial.println();  
+//  delay(5);
 }
 
 
-void setupI2C (int address, int electrodesSetting){
+/*void setupI2C (int address, int electrodesNumber){
 //  Wire.beginTransmission(address); //start sending data bits to address 0x5b and 0x5a
 //  Wire.write(0x80); //send/write 0x80 and 0x63 as the settings for mpr121
 //  Wire.write(0x63); //0x80 and 0x63 is soft reset 
@@ -136,9 +137,9 @@ void setupI2C (int address, int electrodesSetting){
 //  Wire.write(0x5E); // ECR mode, refer to section 11 
 //  Wire.write(electrodesSetting); // setting 1100
 //  Wire.endTransmission();
-  I2CWrite(address, MPR121_ECR, electrodesSetting);
+  I2CWrite(address, MPR121_ECR, electrodesNumber);
 }
-
+*/
 void mpr121AutoConfig(int address){
   //set auto config, works for now but might need to fine tune for better uses
   I2CWrite(address, MPR121_AUTOCONFIG0, 0x0B); 
@@ -175,12 +176,33 @@ void settingsI2C(int address){
 
 }
 
+void MPR121_begin(int address, int electrodesNumber){
+  I2CWrite(address, MPR121_SOFTRESET, 0x63);
+  
+  I2CWrite(address, MPR121_ECR, 0x0);
+
+  setSensitivity(address, 12, 6); //default touch and release threshold
+  
+  settingsI2C(address);
+
+  I2CWrite(address, MPR121_ECR, electrodesNumber);
+  
+}
+
 void I2CWrite(int address, int command, int data){
   Wire.beginTransmission(address);
   Wire.write(command);
   Wire.write(data);
   Wire.endTransmission();
   }
+
+void setSensitivity(int address, int touch, int release){
+  for (int i = 0; i < electrodesNumber; i++) {
+       I2CWrite(address, 0x41 + 2 * i, touch);
+       I2CWrite(address, 0x42 + 2 * i, release);
+       }
+}
+
 
 int getKeysData (int address){
   //mpr1fff21 address (0x5a or 0x5b)
