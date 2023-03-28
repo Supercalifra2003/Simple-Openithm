@@ -168,7 +168,6 @@ void settingsI2C(int address){
   I2CWrite(address, MPR121_DEBOUNCE, 0);
   I2CWrite(address, MPR121_CONFIG1, 0x10);
   I2CWrite(address, MPR121_CONFIG2, 0x20); //0x20 ~32
-
 }
 
 void MPR121_begin(int address, int electrodesNumber){
@@ -181,7 +180,6 @@ void MPR121_begin(int address, int electrodesNumber){
   settingsI2C(address);
 
   I2CWrite(address, MPR121_ECR, electrodesNumber);
-  
 }
 
 void I2CWrite(int address, int command, int data){
@@ -189,13 +187,13 @@ void I2CWrite(int address, int command, int data){
   Wire.write(command);
   Wire.write(data);
   Wire.endTransmission();
-  }
+}
 
 void setSensitivity(int address, int touch, int release){
   for (int i = 0; i < electrodesNumber; i++) {
-       I2CWrite(address, 0x41 + 2 * i, touch);
-       I2CWrite(address, 0x42 + 2 * i, release);
-       }
+     I2CWrite(address, 0x41 + 2 * i, touch);
+     I2CWrite(address, 0x42 + 2 * i, release);
+  }
 }
 
 

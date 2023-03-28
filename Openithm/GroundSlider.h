@@ -4,18 +4,17 @@
 
 #include "Arduino.h"
 #include <Wire.h>
+#include "enums.h"
 
 class GroundSlider
 {
     public:
-        int16_t getKeysData(int address);
-        void setupI2C(int address);
+      int16_t getKeysData(int address);
+      void MPR121_begin(int address, int electrodesNumber);
     private:
-        int pinRequest;
-        int setting1; //todo describe each setting, for now no need
-        int setting2; 
-        int setting3;
-        int setting4;
+      void I2CWrite(int address, int command, int data);
+      void setSens(int address, int electrodesNumber, int touch, int release);
+      void settingsI2C(int address);
 };
 
 #endif

@@ -1,37 +1,59 @@
+#include "GroundSlider.h"
 #include "Arduino.h"
 #include <Wire.h>
-#include "GroundSlider.h"
 
 int pinRequest = 0x00;
-int16_t GroundSlider::getKeysData(int address)
-{
-  //mpr1fff21 address (0x5a or 0x5b)
+int16_t GroundSlider::getKeysData(int address) {
   Wire.beginTransmission(address);
-  Wire.write(pinRequest); //might change to read only 8 pins due to 8+8 layout
+  Wire.write(pinRequest); 
   Wire.endTransmission();
-  Wire.requestFrom(address, 2, true);
-  /*request data from 0x5a, 2 consecutive bytes, and stop message,
-  release the bus for the master device have multiple transmission*/  
+  Wire.requestFrom(address, 1, true);
+
+  return (Wire.read());
+}
+
+void GroundSlider::MPR121_begin(int address, int electrodesNumber){
+  I2CWrite(address, MPR121_SOFTRESET, 0x63);
   
-  return (Wire.read() | Wire.read() << 8) & 0b0000111111111111;
-  /*Wire.read(): read the next byte transmitted; two times
-  second byte shift to the left 8 times
-  use bitwise AND to mask the unwanted bits*/
+  I2CWrite(address, MPR121_ECR, 0x0);
+
+  setSens(address, electrodesNumber, 1, 6); //default 12 6
+  
+  settingsI2C(address);
+
+  I2CWrite(address, MPR121_ECR, electrodesNumber);
 }
 
-int setting1=0x80;
-int setting2=0x63;
-int setting3=0x5E;
-int setting4=0x0C;
-void GroundSlider::setupI2C(int address)
-{
-  Wire.beginTransmission(address); //start sending data bits to address 0x5b and 0x5a
-  Wire.write(setting1); //send/write 0x80 and 0x63 as the settings for mpr121
-  Wire.write(setting2);
-  Wire.endTransmission(); //end sending data bits
-
+void GroundSlider::I2CWrite(int address, int command, int data){
   Wire.beginTransmission(address);
-  Wire.write(setting3);
-  Wire.write(setting4);
+  Wire.write(command);
+  Wire.write(data);
   Wire.endTransmission();
 }
+void GroundSlider::setSens(int address, int electrodesNumber, int touch, int release){
+  for (int i = 0; i < electrodesNumber; i++) {
+     I2CWrite(address, 0x41 + 2 * i, touch);
+     I2CWrite(address, 0x42 + 2 * i, release);
+  }
+}
+void GroundSlider::settingsI2C(int address){
+  //sucreto setting is describe the the comments, might need to change to it
+  I2CWrite(address, MPR121_MHDR, 0x01); 
+  I2CWrite(address, MPR121_NHDR, 0x01);  
+  I2CWrite(address, MPR121_NCLR, 0x0E); //0x10
+  I2CWrite(address, MPR121_FDLR, 0x00);
+     
+  I2CWrite(address, MPR121_MHDF, 0x01);
+  I2CWrite(address, MPR121_NHDF, 0x05); //0x01
+  I2CWrite(address, MPR121_NCLF, 0x01); //0x08
+  I2CWrite(address, MPR121_FDLF, 0x00); //0x08
+
+  I2CWrite(address, MPR121_NHDT, 0x00);
+  I2CWrite(address, MPR121_NCLT, 0x00);
+  I2CWrite(address, MPR121_FDLT, 0x00);
+
+  I2CWrite(address, MPR121_DEBOUNCE, 0);
+  I2CWrite(address, MPR121_CONFIG1, 0x10);
+  I2CWrite(address, MPR121_CONFIG2, 0x20); //0x20 ~32
+}
+
