@@ -48,10 +48,10 @@ char keys[16] = {
   'g', 'b', 'h', 'n', 'j', 'm', 'k', ','
 };
 
-byte photoDiode[6] = {A0, A1, A2, A3, A6, A7};
-const byte LED_0 = 7;
-const byte LED_1 = 8;
-const byte LED_2 = 9;
+byte photoDiode[6] = {A2, A1, A0, A10, A3, A9};
+const byte LED_0 = 16;
+const byte LED_1 = 14;
+const byte LED_2 = 15;
 
 int fluctuationValue = 50;
 int calibrateValue[6];
@@ -60,8 +60,8 @@ char airKeys[6] = { '.', '/', ';', '\'', '[', ']'};
 void setup() {
   Wire.begin(); //initialize Wire.h lib
   Wire.setClock(400000L); //run clock at 400kHz
-//  Serial.begin(115200); //initialize serial with 9600 baud rate
-  Keyboard.begin();
+  Serial.begin(9600); //initialize serial with 9600 baud rate
+//  Keyboard.begin();
   for (int i = 0; i < 6; i++){
       pinMode(photoDiode[i], INPUT);
       calibrateValue[i] = calibrateLED(i);
@@ -69,7 +69,7 @@ void setup() {
 //  setupI2C(0x5A, electrodesNumber);
 //  setupI2C(0x5B, electrodesNumber);
   MPR121_begin(0x5A, electrodesNumber);
-  MPR121_begin(0x5B, electrodesNumber);
+  MPR121_begin(0x5C, electrodesNumber);
   delay(3000); //wait for complete setup
   Serial.println("SETUP COMPLETE"); 
 }
@@ -81,7 +81,7 @@ void loop() {
   //print data1 as binary
 
   //mpr121 0x5B
-  data2 = getKeysData(0x5B);
+  data2 = getKeysData(0x5C);
   //Serial.println(data2, BIN);
   //print data2 as binary
 
@@ -91,35 +91,30 @@ void loop() {
   Or use bitRead
   to do: ADD RAW HID*/
   
-  for(int i=0; i<8; i++)
-  {
+  for(int i=0; i<8; i++) {
     (bitRead(data1, i) == 1) ? Keyboard.press(keys[i]) : Keyboard.release(keys[i]);
     (bitRead(data2, i) == 1) ? Keyboard.press(keys[i+8]) : Keyboard.release(keys[i+8]);
   }
 
-  for (int i = 0; i < 6; i++) {
+  //Serial.println("IR: ");
+   for (int i = 0; i < 6; i++) {
     controlLED(i); //turn on corresponding IRLED
     delay(2); //to preven read before turn on (as describe in other Openithm)
     int diodeValue = analogRead(photoDiode[i]);
-//      Serial.println("IR number");
-//      Serial.print(i);
-//      Serial.print(" is ");
-//      Serial.print("|");
-//      Serial.print(diodeValue);
-//      Serial.print("   ");
+    //Serial.print(diodeValue);
+    //Serial.print("   ");
     if (diodeValue < (calibrateValue[i] - fluctuationValue)) {
       Keyboard.press(airKeys[i]);
-//          Serial.print(airKeys[i]); 
-//          Serial.print(" press    |");
-        }
-     else {
+      //Serial.print(airKeys[i]); 
+      //Serial.print(" press    |");
+       }
+    else {
       Keyboard.release(airKeys[i]);
-//          Serial.print(airKeys[i]);
-//          Serial.print(" release  |");
-        }
-  }
-//  Serial.println();  
-//  delay(5);
+      //Serial.print(airKeys[i]);
+      //Serial.print(" release  |");
+       }
+}
+  //Serial.println();  
 }
 
 
@@ -181,7 +176,7 @@ void MPR121_begin(int address, int electrodesNumber){
   
   I2CWrite(address, MPR121_ECR, 0x0);
 
-  setSensitivity(address, 12, 6); //default touch and release threshold
+  setSensitivity(address, 1, 6); //default touch and release threshold
   
   settingsI2C(address);
 
