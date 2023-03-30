@@ -13,3 +13,4 @@ this Keyboard library support more key-rollovers (the standard only support 6) u
 To do:
 -Direct port manipulation and using registers to reduce delay
 -Use HID library directly instead of using through Arduino built-in Keyboard library, which I need to modify to use more than 6 simultaneous keys. This will lower the latency while not letting anybody (if there is) who use my code have to modify the Keyboard library themselves.
+-Able to change the MPR121 settings without editing the sketch
